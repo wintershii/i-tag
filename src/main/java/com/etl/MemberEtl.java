@@ -19,12 +19,43 @@ public class MemberEtl {
         List<MemberChannel> memberChannels = memberRegChannel(session);
         List<MemberSub> memberSubs = memberMpSub(session);
 
+        MemberHeat memberHeat = memberHeat(session);
+
         MemberVo vo = new MemberVo();
         vo.setMemberSexes(memberSexes);
         vo.setMemberChannels(memberChannels);
         vo.setMemberSubs(memberSubs);
+        vo.setMemberHeat(memberHeat);
         System.out.println(JSON.toJSONString(vo));
     }
+
+    /**
+     * member heat etl
+     * @param session
+     * @return
+     */
+    public static MemberHeat memberHeat(SparkSession session) {
+        //reg,complete,order,orderAgain,
+        //reg,complete ==> i_member.t_member
+        //order,orderAgain ==> i_order.t_order
+        //coupon ==> i_marketing.t_coupon_member
+
+        Dataset<Row> regComplete = session.sql("select count(if(phone='null',id,null)) as reg, " +
+                " count(if(phone != 'null',id,null)) as complete " +
+                " from i_member._member ");
+
+        Dataset<Row> orderAgain = session.sql("select count(if(t.orderCount = 1),t.member_id,null) as order, " +
+                " count(if(t.orderCount  >= 2),t.member_id,null) as orderAgain from " +
+                " (select count(order_id) as orderCount, member_id from i_order.t_order group by member_id) as t ");
+
+        Dataset<Row> coupon = session.sql("select count(distinct member_id) from i_marketing.t_coupon_member ");
+
+        Dataset<Row> result = coupon.crossJoin(regComplete).crossJoin(orderAgain);
+        List<String> list = result.toJSON().collectAsList();
+        List<MemberHeat> collect = list.stream().map(str->JSON.parseObject(str,MemberHeat.class)).collect(Collectors.toList());
+        return collect.get(0);
+    }
+
 
     /**
      * member mp sub etl
@@ -72,6 +103,8 @@ public class MemberEtl {
     }
 
 
+
+
     public static SparkSession init() {
         SparkSession session = SparkSession.builder().appName("member etl")
                 .master("local[*]").enableHiveSupport()
@@ -102,6 +135,17 @@ public class MemberEtl {
         private List<MemberSex> memberSexes;
         private List<MemberChannel> memberChannels;
         private List<MemberSub> memberSubs;
+
+        private MemberHeat memberHeat;
+    }
+
+    @Data
+    static class MemberHeat {
+        private Integer reg;
+        private Integer complete;
+        private Integer order;
+        private Integer orderAgain;
+        private Integer coupon;
     }
 
 }
