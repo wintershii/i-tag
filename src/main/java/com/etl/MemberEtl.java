@@ -1,6 +1,7 @@
 package com.etl;
 
 import com.alibaba.fastjson.JSON;
+import com.support.SparkUtils;
 import lombok.Data;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 public class MemberEtl {
 
     public static void main(String[] args) {
-        SparkSession session = init();
+        SparkSession session = SparkUtils.initSession();
 
         List<MemberSex> memberSexes = memberSex(session);
         List<MemberChannel> memberChannels = memberRegChannel(session);
@@ -102,15 +103,6 @@ public class MemberEtl {
         return collect;
     }
 
-
-
-
-    public static SparkSession init() {
-        SparkSession session = SparkSession.builder().appName("member etl")
-                .master("local[*]").enableHiveSupport()
-                .getOrCreate();
-        return session;
-    }
 
     @Data
     static class MemberSex {
