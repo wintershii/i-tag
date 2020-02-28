@@ -25,6 +25,7 @@ public class LineChartEtl {
     public static void main(String[] args) {
         SparkSession session = SparkUtils.initSession();
         List<LineVo> lineVos = lineVos(session);
+        System.out.println(lineVos);
     }
 
     /**
@@ -104,6 +105,7 @@ public class LineChartEtl {
 
     @Data
     static class LineVo {
+        // 时间关联，线性增长 mysql
         private String day;
         private Integer regCount;
         private Integer memberCount;

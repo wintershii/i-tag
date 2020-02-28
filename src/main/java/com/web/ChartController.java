@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @Slf4j
 public class ChartController {
+    //springboot web
+
+    //用户点选标签集合 -->  DSL 标签语句
     @RequestMapping("/tags")
     public String chart(){
         return "tags";
